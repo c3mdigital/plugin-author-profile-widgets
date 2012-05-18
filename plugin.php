@@ -45,7 +45,6 @@ class C3M_Plugin_Author_Widgets {
 	var $my_activity;
 	var $my_about_me;
 
-
 	function __construct() {
 		self::$instance = $this;
 		 add_action( 'widgets_init',     'c3m_register'  );
@@ -94,26 +93,10 @@ class C3M_Plugin_Author_Widgets {
 					break;
 			endswitch;
 
-
 		}
-
 	}
-
-	function get_plugins( $my_username ) {
-		//$my_profile = new simple_html_dom();
-		$my_profile = file_get_html( 'http://profiles.wordpress.org/' . $my_username . '/' );
-
-	//	$my_profile = $this->get_profile( $my_username );
-		//foreach ( $my_profile->find( '#main-column .info-group.plugin-theme.main-plugins ul li', 0 ) as $li ) {
-		//	$my_plugins[] = $li->innertext;
-		$my_plugins = $my_profile->find( 'div[id=main-column]', 0);
-	//	}
-
-		return $my_plugins;
-	}
-
 }
-	$author_widgets = new C3M_Plugin_Author_Widgets();
+$author_widgets = new C3M_Plugin_Author_Widgets();
 
 
 class C3M_MY_Profile_Data extends WP_Widget {
@@ -146,8 +129,8 @@ class C3M_MY_Profile_Data extends WP_Widget {
 				$plugin_data = get_transient( 'c3m_plugin_'.$widget.'_' );
 
 				/**
-			    * @var string $before_widget defined by theme @see register_sidebar()
-			    */
+			    	* @var string $before_widget defined by theme @see register_sidebar()
+			    	*/
 				echo $before_widget;
 
 				/**
@@ -158,8 +141,8 @@ class C3M_MY_Profile_Data extends WP_Widget {
 				echo  $plugin_data;
 				echo '<style type="text/css">.star-rating{background: url('. WP_PLUGIN_URL . '/plugin-author-profile-widgets/images/rating-stars-small-blue.png)}</style>';
 				/**
-			    * @var string $after_widget defined by theme @see register_sidebar()
-			    */
+			    	 * @var string $after_widget defined by theme @see register_sidebar()
+			    	 */
 				echo $after_widget;
 
 	}
@@ -177,14 +160,10 @@ class C3M_MY_Profile_Data extends WP_Widget {
 	}
 
 	function form( $instance ) {
-		$instance = wp_parse_args( (array) $instance, array(
-									'title'     => '',
-									'wp_user'   => '',
-									'widget'    => '',
-			) );
+		$instance = wp_parse_args( (array) $instance, array( 'title' => '','wp_user'   => '', 'widget'    => '', ) );
 		foreach( $instance as $field => $value ) {
 			if( isset( $new_instance[$field] ) )
-				$instance[$field] = 1;
+			$instance[$field] = 1;
 		}
 		$widgets_avail = array( 'my_plugins' => 'My Plugins', 'my_favorites' => 'My Favorites', 'about_me' => 'My About Me', 'my_activity' => 'My Activity' );
 		$title          = strip_tags( $instance['title']);
@@ -193,26 +172,23 @@ class C3M_MY_Profile_Data extends WP_Widget {
 		?>
 
 		<p>
-            <label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Widget Title' ); ?></label>
-            <input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>"/>
-        </p>
+            	<label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Widget Title' ); ?></label>
+            	<input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>"/>
+        	</p>
 		<p>
-			<label for="<?php echo $this->get_field_id( 'wp_user' ); ?>"><?php _e( 'WordPress.org username' ); ?></label>
-            <input class="widefat" id="<?php echo $this->get_field_id( 'wp_user' ); ?>" name="<?php echo $this->get_field_name( 'wp_user' ); ?>" type="text" value="<?php echo esc_attr( $wp_user ); ?>"/>
-			<?php if ( empty ( $wp_user ) ) :    echo '<span class="gist_error_message">Username is required!</span>'; endif; ?>
-        </p>
+		<label for="<?php echo $this->get_field_id( 'wp_user' ); ?>"><?php _e( 'WordPress.org username' ); ?></label>
+            	<input class="widefat" id="<?php echo $this->get_field_id( 'wp_user' ); ?>" name="<?php echo $this->get_field_name( 'wp_user' ); ?>" type="text" value="<?php echo esc_attr( $wp_user ); ?>"/>
+		<?php if ( empty ( $wp_user ) ) :    echo '<span class="gist_error_message">Username is required!</span>'; endif; ?>
+        	</p>
 		<br/>
 		<p>
-			<label for="<?php echo $this->get_field_id( 'widget' ); ?>"><?php _e( 'Choose Widget' ); ?></label>
-			<select id="<?php echo $this->get_field_id( 'widget' ); ?>" name="<?php echo $this->get_field_name( 'widget' ); ?>" class="widefat">
+		<label for="<?php echo $this->get_field_id( 'widget' ); ?>"><?php _e( 'Choose Widget' ); ?></label>
+		<select id="<?php echo $this->get_field_id( 'widget' ); ?>" name="<?php echo $this->get_field_name( 'widget' ); ?>" class="widefat">
                 <?php foreach ( $widgets_avail as $key => $value ) : ?>
-					<option value="<?php echo $key; ?>" <?php  selected( $key, $widget ); ?>><?php echo $value; ?></option>
-				<?php endforeach; ?>
-            </select>
+		<option value="<?php echo $key; ?>" <?php  selected( $key, $widget ); ?>><?php echo $value; ?></option>
+		<?php endforeach; ?>
+            	</select>
 		</p>
-
-
-
 
 	<?php }
 
