@@ -46,18 +46,57 @@ class C3M_Plugin_Author_Widgets {
 	var $my_about_me;
 
 
-
 	function __construct() {
 		self::$instance = $this;
 		 add_action( 'widgets_init',     'c3m_register'  );
 	}
 
-	function get_profile( $my_username ) {
-		$my_profile = new simple_html_dom();
-		$my_profile->load_file( 'http://profiles.wordpress.org/'.$my_username.'/' );
+	function get_profile_data( $widget, $wp_user ) {
+		$my_profile = file_get_html( 'http://profiles.wordpress.org/'.$wp_user.'/' );
 
-		var_dump( $my_profile );
-		return $my_profile;
+		if ( $my_profile !== FALSE ) {
+
+			$my_about_me    = $my_profile->find( 'p.item-meta-about', 0 )->innertext;
+			$my_activity    = $my_profile->find( 'ul#activity-list', 0 )->innertext;
+			$key = 0;
+			foreach ( $my_profile->find( 'div[class="main-plugins]' ) as $div ) {
+
+				$plugin[$key] = $div->innertext; $key++;
+			}
+			$profile_data = array(
+			//	'plugins'   => $my_profile->find('div.info-group.plugin-theme.main-plugins', 0)->children(1),
+			//	'favorites' => $my_profile->find('div.info-group.plugin-theme.main-plugins', 0)->childeren(2),
+				'plugins'   => $plugin[0],
+				'favorites' => $plugin[1],
+				'activity'  => $my_activity,
+				'about_me'  => $my_about_me,
+			);
+
+			$my_profile->clear();
+
+			switch ( $widget ) :
+				case 'my_plugins' :
+					return '<ul>'. $profile_data['plugins']. '</ul>';
+					break;
+				case 'my_favorites' :
+					$data = $profile_data['favorites'];
+					$data = preg_replace( '#\<h4\>(.+?)\<\/h4\>#s', '', $data );
+					$data = preg_replace( '#\<br\>(.+?)\<\/\>#s', '', $data );
+					$s = array ( '<h3>', '</h3>' );
+					$r = array ( '<p>', '</p>' );
+					$data = str_ireplace( $s, $r, $data );
+					return $data;
+					break;
+				case 'about_me' :
+					return '<p>' .$profile_data['about_me']. '</p>';
+				case 'activity' :
+					return '<ul>'. $profile_data['activity']. '</ul>';
+					break;
+			endswitch;
+
+
+		}
+
 	}
 
 	function get_plugins( $my_username ) {
@@ -73,101 +112,13 @@ class C3M_Plugin_Author_Widgets {
 		return $my_plugins;
 	}
 
-
-
-	function get_favorites( $my_username ) {
-
-	}
-
-	function get_about_me( $my_username ) {
-
-	}
-
-	function widgets_init() {
-		// register_widget( new C3M_MY_Plugins );
-
-
-	}
-
-
 }
 	$author_widgets = new C3M_Plugin_Author_Widgets();
 
-class C3M_About_Me extends WP_Widget {
 
-	function c3m_about_me() {
-		$widget_ops = array( 'classname' => ' ', 'description' => ' ' );
-		$this->WP_Widget( ' ', ' ', $widget_ops );
+class C3M_MY_Profile_Data extends WP_Widget {
 
-	}
-
-	function widget( $args, $instance ) {
-
-	}
-
-	function update( $new_instance, $old_instance ) {
-
-	}
-
-	function form( $instance ) {
-
-	}
-
-
-}
-
-
-class C3M_MY_Favorites extends WP_Widget {
-
-	function c3m_my_favorites() {
-		$widget_ops = array ( 'classname'   => ' ',
-		                      'description' => ' '
-		);
-		$this->WP_Widget( ' ', ' ', $widget_ops );
-
-	}
-
-	function widget( $args, $instance ) {
-
-	}
-
-	function update( $new_instance, $old_instance ) {
-
-	}
-
-	function form( $instance ) {
-
-	}
-
-}
-
-class C3M_MY_Activity extends WP_Widget {
-
-	function c3m_my_activity() {
-		$widget_ops = array ( 'classname'   => ' ',
-		                      'description' => ' '
-		);
-		$this->WP_Widget( ' ', ' ', $widget_ops );
-
-	}
-
-	function widget( $args, $instance ) {
-
-	}
-
-	function update( $new_instance, $old_instance ) {
-
-	}
-
-	function form( $instance ) {
-
-	}
-
-}
-
-class C3M_MY_Plugins extends WP_Widget {
-
-	function C3M_MY_Plugins() {
+	function C3M_MY_Profile_Data() {
 		$widget_ops = array ( 'classname'   => 'my_plugins', 'description' => 'Displays a list of your WordPress.org Plugins' );
 		$this->WP_Widget( 'my_plugins', 'WordPress.org Plugins', $widget_ops );
 
@@ -176,51 +127,50 @@ class C3M_MY_Plugins extends WP_Widget {
 	function widget( $args, $instance ) {
 		extract( $args, EXTR_SKIP );
 		global $author_widgets;
+		$widget = $instance['widget'];
 
-		$wp_user = $instance['wp_user'];
 
-			if( false == get_transient( 'c3m_plugin_author_plugins_'.$wp_user.'' ) ) {
-
+			if ( false == get_transient( 'c3m_plugin_'.$widget.'_' ) ) {
+				$title = $instance['title'];
 				$wp_user = $instance['wp_user'];
-				$plugins = $author_widgets->get_plugins( $wp_user );
+				$widget = $instance['widget'];
+				$plugin_data = $author_widgets->get_profile_data( $widget, $wp_user );
 
-				set_transient( 'c3m_plugin_author_plugins_' . $wp_user . '', $plugins, 60*60*12 );
+				set_transient( 'c3m_plugin_'.$widget.'_', $plugin_data, 60*60*12 );
 			}
-			$title      = $instance['title'];
-			$wp_user    = $instance['wp_user'];
-			$show_stats = $instance['show_stats'];
-			$plugins = get_transient( 'c3m_plugin_author_plugins_' . $wp_user . '' );
 
-			/** @var string $before_widget */
-			echo $before_widget;
+				$title = $instance['title'];
+				$wp_user = $instance['wp_user'];
+				$widget = $instance['widget'];
 
-			$title = empty( $instance['title'] ) ? '' : apply_filters( 'widget_title', $instance['title'] );
-			if ( ! empty( $title ) ) {
+				$plugin_data = get_transient( 'c3m_plugin_'.$widget.'_' );
+
 				/**
-				 * @var string $before_title
+			    * @var string $before_widget defined by theme @see register_sidebar()
+			    */
+				echo $before_widget;
+
+				/**
+				 * @var string $before_title defined by theme @see register_sidebar()
 				 * @var string $after_title
 				 */
-				echo $before_title . $title . $after_title; };
-				echo '<ul>';
-					foreach ( (array) $plugins as $plugin ) {
-						echo "<li>$plugin</li>";
-					}
-
-				echo '</ul>';
-			/** @var string $after_widget */
-
+				echo $before_title . $title . $after_title;
+				echo  $plugin_data;
+				echo '<style type="text/css">.star-rating{background: url('. WP_PLUGIN_URL . '/plugin-author-profile-widgets/images/rating-stars-small-blue.png)}</style>';
+				/**
+			    * @var string $after_widget defined by theme @see register_sidebar()
+			    */
 				echo $after_widget;
 
 	}
 
-
 	function update( $new_instance, $old_instance ) {
 		$instance = $old_instance;
-		$instance['title']          = strip_tags( $new_instance['title']  );
-		$instance['wp_user']        = strip_tags( $new_instance['wp_user'] );
-		$instance['show_stats']     = !empty( $new_instance['show_stats'] ) ? 1 : 0;
+		$instance['title']      = strip_tags( $new_instance['title']  );
+		$instance['wp_user']    = strip_tags( $new_instance['wp_user'] );
+		$instance['widget']     = strip_tags( $new_instance['widget'] );
 
-		delete_transient( 'c3m_plugin_author_plugins_' . $instance['wp_user'] . '' );
+		delete_transient( 'c3m_plugin_'.$instance['widget'].'_' );
 
 			return $instance;
 
@@ -228,18 +178,18 @@ class C3M_MY_Plugins extends WP_Widget {
 
 	function form( $instance ) {
 		$instance = wp_parse_args( (array) $instance, array(
-				'title'         => '',
-				'wp_user'       => '',
-				'show_stats'    =>  0,
-			));
+									'title'     => '',
+									'wp_user'   => '',
+									'widget'    => '',
+			) );
 		foreach( $instance as $field => $value ) {
 			if( isset( $new_instance[$field] ) )
 				$instance[$field] = 1;
 		}
-
+		$widgets_avail = array( 'my_plugins' => 'My Plugins', 'my_favorites' => 'My Favorites', 'about_me' => 'My About Me', 'my_activity' => 'My Activity' );
 		$title          = strip_tags( $instance['title']);
 		$wp_user        = strip_tags( $instance['wp_user']);
-		$show_stats     = strip_tags( $instance['show_stats']);
+		$widget         = strip_tags( $instance['widget']);
 		?>
 
 		<p>
@@ -252,11 +202,15 @@ class C3M_MY_Plugins extends WP_Widget {
 			<?php if ( empty ( $wp_user ) ) :    echo '<span class="gist_error_message">Username is required!</span>'; endif; ?>
         </p>
 		<br/>
-		<p><strong>Optional Values</strong></p>
 		<p>
-            <input class="checkbox" type="checkbox" <?php checked( $instance['show_stats'], true ) ?> id="<?php echo $this->get_field_id( 'show_stats' ); ?>" name="<?php echo $this->get_field_name( 'show_stats' ); ?>"/>
-			<label for="<?php echo $this->get_field_id( 'show_stats' ); ?>"><?php _e( 'Display Download Stats' ); ?></label>
-        </p>
+			<label for="<?php echo $this->get_field_id( 'widget' ); ?>"><?php _e( 'Choose Widget' ); ?></label>
+			<select id="<?php echo $this->get_field_id( 'widget' ); ?>" name="<?php echo $this->get_field_name( 'widget' ); ?>" class="widefat">
+                <?php foreach ( $widgets_avail as $key => $value ) : ?>
+					<option value="<?php echo $key; ?>" <?php  selected( $key, $widget ); ?>><?php echo $value; ?></option>
+				<?php endforeach; ?>
+            </select>
+		</p>
+
 
 
 
@@ -264,5 +218,5 @@ class C3M_MY_Plugins extends WP_Widget {
 
  }
 function c3m_register() {
-register_widget( 'C3M_MY_Plugins' );
+register_widget( 'C3M_MY_Profile_Data' );
 }
